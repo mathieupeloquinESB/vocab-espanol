@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocabulaire Espagnol</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+body { background: #f5f5f5; min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem; }
+#app { width: 100%; max-width: 680px; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* Setup */
+h1 { font-size: 24px; font-weight: bold; margin-bottom: 0.25rem; }
+.subtitle { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+.themes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.5rem; }
+.theme-card { background: #fff; border: 2px solid #ddd; border-radius: 10px; padding: 12px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: border-color 0.15s, background 0.15s; user-select: none; }
+.theme-card:hover { border-color: #aaa; }
+.theme-card.checked { border-color: #111; background: #111; color: #fff; }
+.theme-card .check { width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.theme-card.checked .check { border-color: #fff; background: #fff; color: #111; }
+.theme-name { font-size: 14px; font-weight: bold; line-height: 1.3; }
+.theme-count { font-size: 12px; opacity: 0.6; }
+.select-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+.select-row button { flex: 1; padding: 8px; font-size: 13px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; }
+.select-row button:hover { background: #f0f0f0; }
+.btn { display: block; width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border: 1px solid #ccc; border-radius: 10px; background: #fff; cursor: pointer; transition: background 0.15s; }
+.btn:hover { background: #f0f0f0; }
+.btn-primary { background: #111; color: #fff; border-color: #111; }
+.btn-primary:hover { background: #333; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.word-count-info { font-size: 13px; color: #666; text-align: center; margin-bottom: 0.75rem; }
+
+/* Game */
+.game-card { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 2rem; text-align: center; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; cursor: pointer; user-select: none; }
+.game-card:hover { border-color: #aaa; }
+#hint-display { font-size: 30px; font-weight: bold; color: #111; background: #f0f0f0; border-radius: 10px; padding: 1rem 1.5rem; min-height: 75px; display: flex; align-items: center; justify-content: center; text-align: center; max-width: 100%; }
+#word-big { font-size: 38px; font-weight: bold; color: #111; min-height: 56px; display: flex; align-items: center; justify-content: center; text-align: center; }
+#theme-badge { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.07em; }
+#hint { font-size: 12px; color: #999; letter-spacing: 0.08em; text-transform: uppercase; }
+.progress-bar-track { width: 100%; height: 4px; background: #ddd; border-radius: 2px; overflow: hidden; margin-bottom: 0.75rem; }
+.progress-bar-fill { height: 100%; background: #111; border-radius: 2px; transition: width 0.3s; }
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 13px; color: #666; }
+
+/* Done */
+#done { text-align: center; padding: 3rem 0; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="setup" class="screen active">
+    <h1>Vocabulaire espagnol</h1>
+    <p class="subtitle">Choisissez les thèmes à réviser :</p>
+    <div class="select-row">
+      <button onclick="selectAll()">Tout cocher</button>
+      <button onclick="selectNone()">Tout décocher</button>
+    </div>
+    <div class="themes-grid" id="themes-grid"></div>
+    <p class="word-count-info" id="word-count-info">0 mot sélectionné</p>
+    <button class="btn btn-primary" id="start-btn" onclick="startSession()" disabled>Démarrer l'exercice</button>
+  </div>
+
+  <div id="game" class="screen">
+    <div class="top-bar">
+      <span id="progress-text">Mot 0 / 0</span>
+      <button class="btn" style="width:auto;padding:6px 14px;font-size:13px;" onclick="resetApp()">Quitter</button>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="game-card" onclick="handleClick()">
+      <div id="theme-badge"></div>
+      <div id="hint-display">❔</div>
+      <div id="word-big" style="visibility:hidden;"></div>
+      <div id="hint">Cliquez pour commencer</div>
+    </div>
+    <button class="btn" style="margin-top:12px;font-size:14px;" onclick="handleClick()">Continuer →</button>
+  </div>
+
+  <div id="done" class="screen">
+    <div style="font-size:60px;margin-bottom:1rem;">✅</div>
+    <p style="font-size:22px;font-weight:bold;margin-bottom:0.5rem;">Exercice terminé !</p>
+    <p id="done-count" style="font-size:14px;color:#666;margin-bottom:1.5rem;"></p>
+    <button class="btn btn-primary" onclick="resetApp()" style="max-width:260px;margin:0 auto;">Choisir les thèmes</button>
+  </div>
+
+</div>
+<script>
+const THEMES = {
+  "Los animales": {
+    'perro':['le chien','el perro'],
+    'gato':['le chat','el gato'],
+    'caballo':['le cheval','el caballo'],
+    'yegua':['la jument','la yegua'],
+    'ratón':['la souris','el ratón'],
+    'vaca':['la vache','la vaca'],
+    'chancho':['le cochon','el chancho'],
+    'cerdo':['le cochon','el cerdo'],
+    'cordero':["l'agneau",'el cordero'],
+    'conejo':['le lapin','el conejo'],
+    'gallo':['le coq','el gallo'],
+    'gallina':['la poule','la gallina'],
+    'pato':['le canard','el pato'],
+    'pavo':['la dinde','el pavo'],
+    'oso':["l'ours",'el oso'],
+    'lobo':['le loup','el lobo'],
+    'zorro':['le renard','el zorro'],
+    'venado':['le cerf','el venado'],
+    'ardilla':["l'écureuil",'la ardilla'],
+    'mascota':["l'animal de compagnie",'la mascota'],
+    'pata':['la patte','la pata'],
+    'jardín zoológico':['le zoo','el jardín zoológico'],
+    'cola':['la queue','la cola'],
+    'león':['le lion','el león'],
+    'tigre':['le tigre','el tigre'],
+    'jirafa':['la girafe','la jirafa'],
+    'cebra':['le zèbre','la cebra'],
+    'elefante':["l'éléphant",'el elefante'],
+    'mono':['le singe','el mono'],
+    'jaguar':['le jaguar','el jaguar'],
+    'canguro':['le kangourou','el canguro'],
+    'delfín':['le dauphin','el delfín'],
+    'ballena':['la baleine','la ballena'],
+    'tiburón':['le requin','el tiburón'],
+    'pez':['le poisson','el pez'],
+    'peces':['les poissons','los peces'],
+    'tortuga':['la tortue','la tortuga'],
+    'rana':['la grenouille','la rana'],
+    'cocodrilo':['le crocodile','el cocodrilo'],
+    'serpiente':['le serpent','la serpiente'],
+    'pájaro':["l'oiseau",'el pájaro'],
+    'ave':["l'oiseau",'el ave'],
+    'murciélago':['la chauve-souris','el murciélago'],
+    'mariposa':['le papillon','la mariposa'],
+    'abeja':["l'abeille",'la abeja'],
+    'mosquito':['le moustique','el mosquito'],
+    'mosca':['la mouche','la mosca'],
+  },
+  "Las bebidas y la comida": {
+    'agua':["l'eau",'el agua'],
+    'leche':['le lait','la leche'],
+    'bebida':['la boisson','la bebida'],
+    'gaseosa':['la boisson gazeuse','la gaseosa'],
+    'jugo':['le jus','el jugo'],
+    'zumo':['le jus','el zumo'],
+    'café':['le café','el café'],
+    'té':['le thé','el té'],
+    'cerveza':['la bière','la cerveza'],
+    'vino tinto':['le vin rouge','el vino tinto'],
+    'vino blanco':['le vin blanc','el vino blanco'],
+    'salsa':['la sauce','la salsa'],
+    'ketchup':['le ketchup','el ketchup'],
+    'mostaza':['la moutarde','la mostaza'],
+    'hamburguesa':['le hamburger','la hamburguesa'],
+    'hot-dog':['le hot-dog','el hot-dog'],
+    'completo':['le hot-dog garni','el completo'],
+    'pizza':['la pizza','la pizza'],
+    'sandwich':['le sandwich','el sandwich'],
+    'bocadillo':['le sandwich','el bocadillo'],
+    'tacos':['les tacos','los tacos'],
+    'papas fritas':['les frites','las papas fritas'],
+    'pastel':['le gâteau','el pastel'],
+    'torta':['le gâteau','la torta'],
+    'galleta':['le biscuit','la galleta'],
+    'chocolate':['le chocolat','el chocolate'],
+    'helado':['la glace','el helado'],
+    'dulce':['le bonbon','el dulce'],
+    'chicle':['le chewing-gum','el chicle'],
+    'desayuno':['le petit-déjeuner','el desayuno'],
+    'comida':['le repas','la comida'],
+    'sopa':['la soupe','la sopa'],
+    'pan':['le pain','el pan'],
+    'mantequilla':['le beurre','la mantequilla'],
+    'almuerzo':['le déjeuner','el almuerzo'],
+    'cena':['le dîner','la cena'],
+    'postre':['le dessert','el postre'],
+    'colación':['la collation','la colación'],
+    'huevos':['les œufs','los huevos'],
+    'harina':['la farine','la harina'],
+    'azúcar':['le sucre','el azúcar'],
+    'sal y pimienta':['le sel et le poivre','la sal y la pimienta'],
+    'arroz':['le riz','el arroz'],
+    'queso':['le fromage','el queso'],
+    'carne':['la viande','la carne'],
+    'pollo':['le poulet','el pollo'],
+    'pescado':['le poisson','el pescado'],
+    'camarón':['la crevette','el camarón'],
+    'gamba':['la crevette','la gamba'],
+    'pasta':['les pâtes','la pasta'],
+    'espagueti':['les spaghettis','el espagueti'],
+    'fideo':['les nouilles','el fideo'],
+    'sandía':['la pastèque','la sandía'],
+    'uva':['le raisin','la uva'],
+    'pera':['la poire','la pera'],
+    'fresa':['la fraise','la fresa'],
+    'naranja':["l'orange",'la naranja'],
+    'manzana':['la pomme','la manzana'],
+    'plátano':['la banane','el plátano'],
+    'banana':['la banane','la banana'],
+    'piña':["l'ananas",'la piña'],
+    'frijoles':['les haricots','los frijoles'],
+    'legumbres':['les légumineuses','las legumbres'],
+    'verduras':['les légumes','las verduras'],
+    'ensalada':['la salade','la ensalada'],
+    'maíz':['le maïs','el maíz'],
+    'choclo':['le maïs','el choclo'],
+    'pepino':['le concombre','el pepino'],
+    'tomate':['la tomate','el tomate'],
+    'lechuga':['la laitue','la lechuga'],
+    'cebolla':["l'oignon",'la cebolla'],
+    'zanahoria':['la carotte','la zanahoria'],
+    'papa':['la pomme de terre','la papa'],
+    'tener sed':['avoir soif','tener sed'],
+    'tener hambre':['avoir faim','tener hambre'],
+  },
+  "La casa": {
+    'casa':['la maison','la casa'],
+    'apartamento':["l'appartement",'el apartamento'],
+    'condo':['le condo','el condo'],
+    'techo':['le toit','el techo'],
+    'piso':["le sol / l'étage",'el piso'],
+    'puerta':['la porte','la puerta'],
+    'ventana':['la fenêtre','la ventana'],
+    'pared':['le mur','la pared'],
+    'entrada':["l'entrée",'la entrada'],
+    'las escaleras':['les escaliers','las escaleras'],
+    'chimenea':['la cheminée','la chimenea'],
+    'balcón':['le balcon','el balcón'],
+    'jardín':['le jardin','el jardín'],
+    'patio':['le patio','el patio'],
+    'garaje':['le garage','el garaje'],
+    'habitación':['la chambre','la habitación'],
+    'dormitorio':['la chambre','el dormitorio'],
+    'cama':['le lit','la cama'],
+    'almohada':["l'oreiller",'la almohada'],
+    'sábanas':['les draps','las sábanas'],
+    'cómoda':['la commode','la cómoda'],
+    'despertador':['le réveil','el despertador'],
+    'colchón':['le matelas','el colchón'],
+    'peluche':['la peluche','el peluche'],
+    'sofá':['le canapé','el sofá'],
+    'diván':['le divan','el diván'],
+    'sillón':['le fauteuil','el sillón'],
+    'lámpara':['la lampe','la lámpara'],
+    'alfombra':['le tapis','la alfombra'],
+    'televisión':['la télévision','la televisión'],
+    'cuadro':['le tableau','el cuadro'],
+    'mesita':['la table de nuit','la mesita'],
+    'planta':['la plante','la planta'],
+    'baño':['la salle de bain','el baño'],
+    'lavabo':['le lavabo','el lavabo'],
+    'ducha':['la douche','la ducha'],
+    'inodoro':['les toilettes','el inodoro'],
+    'papel higiénico':['le papier hygiénique','el papel higiénico'],
+    'espejo':['le miroir','el espejo'],
+    'champú':['le shampooing','el champú'],
+    'jabón':['le savon','el jabón'],
+    'toalla':['la serviette','la toalla'],
+    'cepillo de dientes':['la brosse à dents','el cepillo de dientes'],
+    'dentífrico':['le dentifrice','el dentífrico'],
+    'cocina':['la cuisine','la cocina'],
+    'comedor':['la salle à manger','el comedor'],
+    'frigorífico':['le réfrigérateur','el frigorífico'],
+    'estufa':['la cuisinière','la estufa'],
+    'horno':['le four','el horno'],
+    'microondas':['le micro-ondes','el microondas'],
+    'fregadero':["l'évier",'el fregadero'],
+    'lavaplatos':['le lave-vaisselle','el lavaplatos'],
+    'cafetera':['la cafetière','la cafetera'],
+    'tetera':['la théière','la tetera'],
+    'tostador':['le grille-pain','el tostador'],
+    'plato':["l'assiette",'el plato'],
+    'copa':['la coupe','la copa'],
+    'vaso':['le verre','el vaso'],
+    'servilleta':['la serviette de table','la servilleta'],
+    'tenedor':['la fourchette','el tenedor'],
+    'cuchara':['la cuillère','la cuchara'],
+    'cuchillo':['le couteau','el cuchillo'],
+    'tazón':['le bol','el tazón'],
+  },
+  "El cuerpo": {
+    'cuerpo':['le corps','el cuerpo'],
+    'cabeza':['la tête','la cabeza'],
+    'cara':['le visage','la cara'],
+    'rostro':['le visage','el rostro'],
+    'ojo':["l'œil",'el ojo'],
+    'nariz':['le nez','la nariz'],
+    'boca':['la bouche','la boca'],
+    'labios':['les lèvres','los labios'],
+    'lengua':['la langue','la lengua'],
+    'oreja':["l'oreille",'la oreja'],
+    'pelo':['les cheveux','el pelo'],
+    'cabello':['les cheveux','el cabello'],
+    'diente':['la dent','el diente'],
+    'frente':['le front','la frente'],
+    'cerebro':['le cerveau','el cerebro'],
+    'cuello':['le cou','el cuello'],
+    'garganta':['la gorge','la garganta'],
+    'mentón':['le menton','el mentón'],
+    'mejilla':['la joue','la mejilla'],
+    'me duele':["j'ai mal",'me duele'],
+    'pecho':['la poitrine','el pecho'],
+    'hombro':["l'épaule",'el hombro'],
+    'espalda':['le dos','la espalda'],
+    'vientre':['le ventre','el vientre'],
+    'estómago':["l'estomac",'el estómago'],
+    'brazo':['le bras','el brazo'],
+    'codo':['le coude','el codo'],
+    'mano':['la main','la mano'],
+    'dedo':['le doigt','el dedo'],
+    'pierna':['la jambe','la pierna'],
+    'rodilla':['le genou','la rodilla'],
+    'pie':['le pied','el pie'],
+    'dedo del pie':["l'orteil",'el dedo del pie'],
+    'hueso':["l'os",'el hueso'],
+    'músculo':['le muscle','el músculo'],
+    'piel':['la peau','la piel'],
+    'trasero':['les fesses','el trasero'],
+    'sangre':['le sang','la sangre'],
+    'corazón':['le cœur','el corazón'],
+    'pulmón':['le poumon','el pulmón'],
+  },
+  "Las descripciones y emociones": {
+    'alto':['grand','alto'],
+    'mediana estatura':['de taille moyenne','mediana estatura'],
+    'bajo':['petit','bajo'],
+    'gordo':['gros','gordo'],
+    'delgado':['mince','delgado'],
+    'fuerte':['fort','fuerte'],
+    'flaco':['maigre','flaco'],
+    'débil':['faible','débil'],
+    'corto':['court','corto'],
+    'largo':['long','largo'],
+    'moreno':['brun','moreno'],
+    'rubio':['blond','rubio'],
+    'castaño':['châtain','castaño'],
+    'pelirrojo':['roux','pelirrojo'],
+    'calvo':['chauve','calvo'],
+    'peludo':['poilu','peludo'],
+    'liso':['lisse / raide','liso'],
+    'rizado':['frisé','rizado'],
+    'pálido':['pâle','pálido'],
+    'viejo':['vieux','viejo'],
+    'joven':['jeune','joven'],
+    'bonito':['joli','bonito'],
+    'lindo':['mignon','lindo'],
+    'bella':['belle','bella'],
+    'feo':['laid','feo'],
+    'guapo':['beau','guapo'],
+    'agradable':['agréable','agradable'],
+    'amable':['aimable','amable'],
+    'amistoso':['amical','amistoso'],
+    'astuto':['astucieux','astuto'],
+    'avergonzado':['honteux','avergonzado'],
+    'bromista':['blagueur','bromista'],
+    'cariñoso':['affectueux','cariñoso'],
+    'celoso':['jaloux','celoso'],
+    'curioso':['curieux','curioso'],
+    'obediente':['obéissant','obediente'],
+    'desobediente':['désobéissant','desobediente'],
+    'dinámico':['dynamique','dinámico'],
+    'discreto':['discret','discreto'],
+    'extraño':['étrange','extraño'],
+    'flojo':['paresseux','flojo'],
+    'gracioso':['drôle','gracioso'],
+    'impaciente':['impatient','impaciente'],
+    'inteligente':['intelligent','inteligente'],
+    'lento':['lent','lento'],
+    'loco':['fou','loco'],
+    'malo':['méchant','malo'],
+    'optimista':['optimiste','optimista'],
+    'paciente':['patient','paciente'],
+    'pesimista':['pessimiste','pesimista'],
+    'rápido':['rapide','rápido'],
+    'sensible':['sensible','sensible'],
+    'serio':['sérieux','serio'],
+    'simpático':['sympathique','simpático'],
+    'tímido':['timide','tímido'],
+    'tonto':['bête','tonto'],
+    'tranquilo':['tranquille','tranquilo'],
+    'trabajador':['travailleur','trabajador'],
+    'triste':['triste','triste'],
+    'valiente':['courageux','valiente'],
+    'vanidoso':['vaniteux','vanidoso'],
+    'aburrido':['ennuyé','aburrido'],
+    'agotado':['épuisé','agotado'],
+    'cansado':['fatigué','cansado'],
+    'contento':['content','contento'],
+    'dormido':['endormi','dormido'],
+    'enfermo':['malade','enfermo'],
+    'en plena forma':['en pleine forme','en plena forma'],
+    'enojado':['en colère','enojado'],
+    'feliz':['heureux','feliz'],
+    'herido':['blessé','herido'],
+    'orgulloso':['fier','orgulloso'],
+    'sorprendido':['surpris','sorprendido'],
+  },
+  "La escuela": {
+    'escuela':["l'école",'la escuela'],
+    'colegio':['le collège','el colegio'],
+    'universidad':["l'université",'la universidad'],
+    'clase':['la classe','la clase'],
+    'curso':['le cours','el curso'],
+    'estudiante':["l'étudiant·e",'el/la estudiante'],
+    'alumno':["l'élève",'el alumno'],
+    'profesor':['le professeur','el profesor'],
+    'director':['le directeur','el director'],
+    'secretario':['le secrétaire','el secretario'],
+    'computador':["l'ordinateur",'el computador'],
+    'mochila':['le sac à dos','la mochila'],
+    'calculadora':['la calculatrice','la calculadora'],
+    'diccionario':['le dictionnaire','el diccionario'],
+    'cuaderno':['le cahier','el cuaderno'],
+    'libro':['le livre','el libro'],
+    'carpeta':['le classeur','la carpeta'],
+    'cartera':['le cartable','la cartera'],
+    'hoja':['la feuille','la hoja'],
+    'agenda':["l'agenda",'la agenda'],
+    'estuche':['la trousse','el estuche'],
+    'lápiz':['le crayon','el lápiz'],
+    'goma de borrar':['la gomme','la goma de borrar'],
+    'bolígrafo':['le stylo','el bolígrafo'],
+    'marcador':['le marqueur','el marcador'],
+    'lápices de colores':['les crayons de couleur','los lápices de colores'],
+    'regla':['la règle','la regla'],
+    'tijeras':['les ciseaux','las tijeras'],
+    'cinta adhesiva':['le ruban adhésif','la cinta adhesiva'],
+    'llave USB':['la clé USB','la llave USB'],
+    'basura':['la poubelle','la basura'],
+    'pupitre':['le pupitre','el pupitre'],
+    'escritorio':['le bureau','el escritorio'],
+    'biblioteca':['la bibliothèque','la biblioteca'],
+    'pizarra':['le tableau','la pizarra'],
+    'tiza':['la craie','la tiza'],
+    'español':["l'espagnol",'el español'],
+    'francés':['le français','el francés'],
+    'inglés':["l'anglais",'el inglés'],
+    'matemáticas':['les mathématiques','las matemáticas'],
+    'ciencias naturales':['les sciences naturelles','las ciencias naturales'],
+    'química':['la chimie','la química'],
+    'física':['la physique','la física'],
+    'biología':['la biologie','la biología'],
+    'informática':["l'informatique",'la informática'],
+    'historia':["l'histoire",'la historia'],
+    'geografía':['la géographie','la geografía'],
+    'música':['la musique','la música'],
+    'educación física':["l'éducation physique",'la educación física'],
+    'deber':['le devoir','el deber'],
+    'examen':["l'examen",'el examen'],
+    'prueba':['le test','la prueba'],
+    'gimnasio':['le gymnase','el gimnasio'],
+    'laboratorio':['le laboratoire','el laboratorio'],
+    'cafetería':['la cafétéria','la cafetería'],
+    'corredor':['le couloir','el corredor'],
+    'recreo':['la récréation','el recreo'],
+    'nota':['la note','la nota'],
+  },
+  "En el restaurante": {
+    'camarero':['le serveur','el camarero'],
+    'camarera':['la serveuse','la camarera'],
+    'reserva':['la réservation','la reserva'],
+    'aperitivo':["l'apéritif",'el aperitivo'],
+    'menú':['le menu','el menú'],
+    'la entrada':["l'entrée",'la entrada'],
+    'plato principal':['le plat principal','el plato principal'],
+    'plato del día':['le plat du jour','el plato del día'],
+    'la cuenta':["l'addition",'la cuenta'],
+    'chef':['le chef','el chef'],
+    'propina':['le pourboire','la propina'],
+    'terraza':['la terrasse','la terraza'],
+    'bar':['le bar','el bar'],
+    'caja':['la caisse','la caja'],
+    'parrilla':['le grill','la parrilla'],
+    'mesa':['la table','la mesa'],
+    'silla':['la chaise','la silla'],
+    'tenedor':['la fourchette','el tenedor'],
+    'cuchillo':['le couteau','el cuchillo'],
+    'plato':["l'assiette",'el plato'],
+    'cuchara':['la cuillère','la cuchara'],
+    'vaso':['le verre','el vaso'],
+    'copa':['la coupe','la copa'],
+    'por favor':["s'il vous plaît",'por favor'],
+    'gracias':['merci','gracias'],
+    'muchas gracias':['merci beaucoup','muchas gracias'],
+    'buen provecho':['bon appétit','buen provecho'],
+    'delicioso':['délicieux','delicioso'],
+    'disculpe':['excusez-moi','disculpe'],
+    'perdón':['pardon','perdón'],
+  },
+  "La ciudad": {
+    'ciudad':['la ville','la ciudad'],
+    'capital':['la capitale','la capital'],
+    'pueblo':['le village','el pueblo'],
+    'barrio':['le quartier','el barrio'],
+    'centro':['le centre','el centro'],
+    'plaza de armas':['la place centrale','la plaza de armas'],
+    'ayuntamiento':['la mairie','el ayuntamiento'],
+    'edificio':["l'immeuble",'el edificio'],
+    'banco':['la banque','el banco'],
+    'iglesia':["l'église",'la iglesia'],
+    'catedral':['la cathédrale','la catedral'],
+    'cementerio':['le cimetière','el cementerio'],
+    'parque':['le parc','el parque'],
+    'avenida':["l'avenue",'la avenida'],
+    'parada de bus':["l'arrêt de bus",'la parada de bus'],
+    'comisaría de policía':['le commissariat','la comisaría de policía'],
+    'casa de bomberos':['la caserne de pompiers','la casa de bomberos'],
+    'aeropuerto':["l'aéroport",'el aeropuerto'],
+    'hospital':["l'hôpital",'el hospital'],
+    'museo':['le musée','el museo'],
+    'monumento':['le monument','el monumento'],
+    'fuente':['la fontaine','la fuente'],
+    'parque de atracciones':["le parc d'attractions",'el parque de atracciones'],
+    'cine':['le cinéma','el cine'],
+    'teatro':['le théâtre','el teatro'],
+    'mercado':['le marché','el mercado'],
+    'tienda':['le magasin','la tienda'],
+    'hotel':["l'hôtel",'el hotel'],
+  },
+  "Los verbos": {
+    'acompañar':['accompagner','acompañar'],
+    'comprar':['acheter','comprar'],
+    'ayudar':['aider','ayudar'],
+    'amar':['aimer','amar'],
+    'querer':['vouloir / aimer','querer'],
+    'ir':['aller','ir'],
+    'llamar':['appeler','llamar'],
+    'aprender':['apprendre','aprender'],
+    'parar':['arrêter','parar'],
+    'esperar':['attendre / espérer','esperar'],
+    'tener':['avoir','tener'],
+    'necesitar':['avoir besoin de','necesitar'],
+    'beber':['boire','beber'],
+    'cantar':['chanter','cantar'],
+    'buscar':['chercher','buscar'],
+    'comprender':['comprendre','comprender'],
+    'continuar':['continuer','continuar'],
+    'bailar':['danser','bailar'],
+    'preguntar':['demander','preguntar'],
+    'pedir':['demander / commander','pedir'],
+    'desear':['désirer','desear'],
+    'deber':['devoir','deber'],
+    'decir':['dire','decir'],
+    'dar':['donner','dar'],
+    'dormir':['dormir','dormir'],
+    'escuchar':['écouter','escuchar'],
+    'escribir':['écrire','escribir'],
+    'estar':["être (état)",'estar'],
+    'ser':["être (identité)",'ser'],
+    'estudiar':['étudier','estudiar'],
+    'hacer':['faire','hacer'],
+    'jugar':['jouer','jugar'],
+    'lavar':['laver','lavar'],
+    'leer':['lire','leer'],
+    'comer':['manger','comer'],
+    'caminar':['marcher','caminar'],
+    'poner':['mettre','poner'],
+    'olvidar':['oublier','olvidar'],
+    'hablar':['parler','hablar'],
+    'salir':['sortir','salir'],
+    'pensar':['penser','pensar'],
+    'perder':['perdre','perder'],
+    'llevar':['porter / emmener','llevar'],
+    'poder':['pouvoir','poder'],
+    'tomar':['prendre','tomar'],
+    'preparar':['préparer','preparar'],
+    'saber':['savoir','saber'],
+    'mirar':['regarder','mirar'],
+    'responder':['répondre','responder'],
+    'levantarse':['se lever','levantarse'],
+    'doblar':['tourner','doblar'],
+    'trabajar':['travailler','trabajar'],
+    'encontrar':['trouver','encontrar'],
+    'visitar':['visiter','visitar'],
+    'vivir':['vivre','vivir'],
+    'ver':['voir','ver'],
+    'viajar':['voyager','viajar'],
+  },
+  "El transporte": {
+    'coche':['la voiture','el coche'],
+    'carro':['la voiture','el carro'],
+    'auto':['la voiture','el auto'],
+    'autobús':['le bus','el autobús'],
+    'tren':['le train','el tren'],
+    'camión':['le camion','el camión'],
+    'camioneta':['la camionnette','la camioneta'],
+    'taxi':['le taxi','el taxi'],
+    'autopista':["l'autoroute",'la autopista'],
+    'carretera':['la route','la carretera'],
+    'calle':['la rue','la calle'],
+    'semáforo':['le feu rouge','el semáforo'],
+    'bicicleta':['le vélo','la bicicleta'],
+    'casco':['le casque','el casco'],
+    'motocicleta':['la moto','la motocicleta'],
+    'moto':['la moto','la moto'],
+    'ambulancia':["l'ambulance",'la ambulancia'],
+    'metro':['le métro','el metro'],
+    'gasolina':["l'essence",'la gasolina'],
+    'barco':['le bateau','el barco'],
+    'lancha':['le canot','la lancha'],
+    'puente':['le pont','el puente'],
+    'peatón':['le piéton','el peatón'],
+    'a pie':['à pied','a pie'],
+    'pasajero':['le passager','el pasajero'],
+    'billete':['le billet','el billete'],
+    'avión':["l'avion",'el avión'],
+    'helicóptero':["l'hélicoptère",'el helicóptero'],
+    'cohete':['la fusée','el cohete'],
+    'nave espacial':['le vaisseau spatial','la nave espacial'],
+  },
+  "La ropa": {
+    'impermeable':["l'imperméable",'el impermeable'],
+    'abrigo':['le manteau','el abrigo'],
+    'chaqueta':['la veste','la chaqueta'],
+    'traje':['le costume','el traje'],
+    'suéter':['le pull','el suéter'],
+    'camiseta':['le t-shirt','la camiseta'],
+    'pijama':['le pyjama','el pijama'],
+    'calzoncillos':['les sous-vêtements','los calzoncillos'],
+    'ropa interior':['les sous-vêtements','la ropa interior'],
+    'bikini':['le bikini','el bikini'],
+    'bañador':['le maillot de bain','el bañador'],
+    'traje de baño':['le maillot de bain','el traje de baño'],
+    'shorts':['le short','los shorts'],
+    'jeans':['le jeans','los jeans'],
+    'pantalones':['le pantalon','los pantalones'],
+    'camisa':['la chemise','la camisa'],
+    'blusa':['le chemisier','la blusa'],
+    'falda':['la jupe','la falda'],
+    'vestido':['la robe','el vestido'],
+    'calcetines':['les chaussettes','los calcetines'],
+    'zapatos':['les chaussures','los zapatos'],
+    'sandalias':['les sandales','las sandalias'],
+    'botas':['les bottes','las botas'],
+    'gorra':['la casquette','la gorra'],
+    'sombrero':['le chapeau','el sombrero'],
+    'guantes':['les gants','los guantes'],
+    'bolso':['le sac','el bolso'],
+    'bufanda':["l'écharpe",'la bufanda'],
+    'cinturón':['la ceinture','el cinturón'],
+    'corbata':['la cravate','la corbata'],
+    'gafas':['les lunettes','las gafas'],
+    'anillo':['la bague','el anillo'],
+    'collar':['le collier','el collar'],
+    'pendientes':["les boucles d'oreilles",'los pendientes'],
+    'reloj':['la montre','el reloj'],
+  },
+  "El tiempo": {
+    'tiempo':['le temps','el tiempo'],
+    'temperatura':['la température','la temperatura'],
+    'calor':['la chaleur','el calor'],
+    'fresco':['frais','fresco'],
+    'frío':['froid','frío'],
+    'buen tiempo':['beau temps','buen tiempo'],
+    'mal tiempo':['mauvais temps','mal tiempo'],
+    'sol':['le soleil','el sol'],
+    'nublado':['nuageux','nublado'],
+    'nube':['le nuage','la nube'],
+    'viento':['le vent','el viento'],
+    'lluvia':['la pluie','la lluvia'],
+    'llueve':['il pleut','llueve'],
+    'nieve':['la neige','la nieve'],
+    'nieva':['il neige','nieva'],
+    'tormenta':['la tempête','la tormenta'],
+    'verano':["l'été",'el verano'],
+    'invierno':["l'hiver",'el invierno'],
+    'otoño':["l'automne",'el otoño'],
+    'primavera':['le printemps','la primavera'],
+  },
+  "Los viajes y direcciones": {
+    'vacaciones':['les vacances','las vacaciones'],
+    'pasaporte':['le passeport','el pasaporte'],
+    'equipaje':['les bagages','el equipaje'],
+    'maleta':['la valise','la maleta'],
+    'turista':['le/la touriste','el/la turista'],
+    'izquierda':['gauche','la izquierda'],
+    'derecha':['droite','la derecha'],
+    'todo derecho':['tout droit','todo derecho'],
+    'intersección':["l'intersection",'la intersección'],
+    'esquina':['le coin','la esquina'],
+    'norte':['le nord','el norte'],
+    'sur':['le sud','el sur'],
+    'este':["l'est",'el este'],
+    'oeste':["l'ouest",'el oeste'],
+    'en frente':['en face','en frente'],
+    'adelante':['en avant','adelante'],
+    'atrás':['derrière','atrás'],
+    'cuadra':['le pâté de maisons','la cuadra'],
+    'aduanas':['la douane','las aduanas'],
+    'aeropuerto':["l'aéroport",'el aeropuerto'],
+    'agencia de viaje':["l'agence de voyage",'la agencia de viaje'],
+    'seguro de viaje':["l'assurance voyage",'el seguro de viaje'],
+  },
+  "El dinero": {
+    'plata':["l'argent",'la plata'],
+    'dinero':["l'argent",'el dinero'],
+    'moneda':['la pièce / la monnaie','la moneda'],
+    'banco':['la banque','el banco'],
+    'casa de cambio':['le bureau de change','la casa de cambio'],
+    'tarjeta de crédito':['la carte de crédit','la tarjeta de crédito'],
+    'tarjeta de débito':['la carte de débit','la tarjeta de débito'],
+    'factura':['la facture','la factura'],
+    'recibo':['le reçu','el recibo'],
+    'al contado':['au comptant','al contado'],
+    'efectivo':['en espèces','el efectivo'],
+  },
+  "La naturaleza": {
+    'mar':['la mer','el mar'],
+    'lago':['le lac','el lago'],
+    'río':['la rivière / le fleuve','el río'],
+    'campo':['la campagne','el campo'],
+    'bosque':['la forêt','el bosque'],
+    'árbol':["l'arbre",'el árbol'],
+    'arbusto':["l'arbuste",'el arbusto'],
+    'flor':['la fleur','la flor'],
+    'pasto':["l'herbe",'el pasto'],
+    'césped':['le gazon','el césped'],
+    'isla':["l'île",'la isla'],
+    'playa':['la plage','la playa'],
+    'arena':['le sable','la arena'],
+    'sol':['le soleil','el sol'],
+    'luna':['la lune','la luna'],
+    'estrella':["l'étoile",'la estrella'],
+    'piedra':['la pierre','la piedra'],
+    'roca':['le rocher','la roca'],
+    'costa':['la côte','la costa'],
+    'montaña':['la montagne','la montaña'],
+    'sierra':['la sierra / la chaîne de montagnes','la sierra'],
+  },
+};
+
+// --- UI Setup ---
+const themeNames = Object.keys(THEMES);
+const selected = new Set();
+
+function renderThemes() {
+  const grid = document.getElementById('themes-grid');
+  grid.innerHTML = '';
+  themeNames.forEach(name => {
+    const count = Object.keys(THEMES[name]).length;
+    const isChecked = selected.has(name);
+    const card = document.createElement('div');
+    card.className = 'theme-card' + (isChecked ? ' checked' : '');
+    card.innerHTML = `<div class="check">${isChecked ? '✓' : ''}</div><div><div class="theme-name">${name}</div><div class="theme-count">${count} mots</div></div>`;
+    card.onclick = () => toggleTheme(name);
+    grid.appendChild(card);
+  });
+  updateWordCount();
+}
+
+function toggleTheme(name) {
+  if (selected.has(name)) selected.delete(name);
+  else selected.add(name);
+  renderThemes();
+}
+
+function selectAll() { themeNames.forEach(n => selected.add(n)); renderThemes(); }
+function selectNone() { selected.clear(); renderThemes(); }
+
+function updateWordCount() {
+  const pool = buildPool();
+  const n = pool.length;
+  document.getElementById('word-count-info').textContent = n === 0 ? 'Aucun thème sélectionné' : n + ' mot' + (n > 1 ? 's' : '') + ' sélectionné' + (n > 1 ? 's' : '');
+  document.getElementById('start-btn').disabled = n === 0;
+}
+
+function buildPool() {
+  const pool = [];
+  selected.forEach(theme => {
+    Object.entries(THEMES[theme]).forEach(([es, [fr, esArt]]) => {
+      pool.push({ fr, es: esArt, theme });
+    });
+  });
+  return pool;
+}
+
+renderThemes();
+
+// --- Game ---
+let words = [], idx = 0, phase = 'start';
+
+function show(id) {
+  ['setup','game','done'].forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startSession() {
+  const pool = buildPool();
+  if (!pool.length) return;
+  // Shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  words = pool;
+  idx = 0; phase = 'start';
+  show('game');
+  updateProgress();
+  document.getElementById('hint-display').textContent = '❔';
+  document.getElementById('word-big').style.visibility = 'hidden';
+  document.getElementById('theme-badge').textContent = '';
+  document.getElementById('hint').textContent = 'Cliquez pour afficher la traduction française';
+}
+
+function updateProgress() {
+  document.getElementById('progress-text').textContent = 'Mot ' + idx + ' / ' + words.length;
+  document.getElementById('progress-fill').style.width = (idx / words.length * 100) + '%';
+}
+
+function handleClick() {
+  if (phase === 'start' || phase === 'image') {
+    const w = words[idx];
+    document.getElementById('hint-display').textContent = w.fr;
+    document.getElementById('theme-badge').textContent = w.theme;
+    document.getElementById('word-big').style.visibility = 'hidden';
+    document.getElementById('hint').textContent = 'Cliquez pour afficher le mot espagnol';
+    phase = 'word';
+  } else if (phase === 'word') {
+    const w = words[idx];
+    document.getElementById('word-big').textContent = w.es;
+    document.getElementById('word-big').style.visibility = 'visible';
+    idx++;
+    updateProgress();
+    if (idx >= words.length) {
+      setTimeout(() => {
+        document.getElementById('done-count').textContent = words.length + ' mot' + (words.length > 1 ? 's' : '') + ' révisé' + (words.length > 1 ? 's' : '');
+        show('done');
+      }, 700);
+      document.getElementById('hint').textContent = 'Exercice terminé !';
+      phase = 'done';
+    } else {
+      document.getElementById('hint').textContent = 'Cliquez pour le mot suivant';
+      phase = 'image';
+    }
+  }
+}
+
+function resetApp() {
+  idx = 0; phase = 'start';
+  show('setup');
+}
+</script>
+</body>
+</html>
